@@ -7,6 +7,7 @@ API REST em Spring Boot para transferências financeiras entre usuários, com co
 - [Requisitos](#requisitos)
 - [Configuração](#configuração)
 - [Execução](#execução)
+- [Acessos locais](#acessos-locais)
 - [RabbitMQ](#rabbitmq)
 - [Fluxo de Outbox](#fluxo-de-outbox)
 - [Endpoints](#endpoints)
@@ -53,6 +54,32 @@ CREATE TABLE outbox_messages (
 Variáveis úteis (ajuste no `application.properties`):
 - `spring.rabbitmq.host`, `spring.rabbitmq.port`, `spring.rabbitmq.username`, `spring.rabbitmq.password`.
 - `app.outbox.dispatch-interval-ms` (intervalo do scheduler de publicação do outbox, default 5000ms).
+
+## Outbox Pattern
+- **Outbox**: tabela `outbox_messages` com colunas para status (`PENDING`, `SENT`, `FAILED`), tipo de evento, payload JSON, contagem de retries, timestamps.
+- **Publisher**: `OutboxPublisher` roda a cada 5s, lê mensagens `PENDING` com `available_at <= now`, publica no RabbitMQ, e atualiza status (`SENT` ou incrementa `retry_count` e agenda próximo `available_at`).
+- **Consumer**: `NotificationConsumer` processa mensagens, falhas de notificação HTTP geram `basicNack` para reentrega; após 3 tentativas, a mensagem é roteada para a DLQ.
+  
+
+### Fluxograma do projeto
+
+![Fluxograma do projeto](src/main/java/com/pagamento/pag_facil/util/images/Fluxograma.jpeg)
+
+
+### H2 Console
+- Com a aplicação em execução, acesse no navegador:
+  - `http://localhost:8080/h2-console`
+- Configuração atual do banco em `src/main/resources/application.properties`:
+  - JDBC URL: `jdbc:h2:file:./db_pag-facil`
+  - Username: `admin`
+  - Password: em branco
+
+### Swagger / OpenAPI
+- Interface Swagger UI:
+  - `http://localhost:8080/swagger-ui/index.html`
+- Documento OpenAPI em JSON:
+  - `http://localhost:8080/v3/api-docs`
+- Como o projeto usa `springdoc-openapi-starter-webmvc-ui`, esses caminhos são os padrões enquanto não houver customização adicional.
 
 ## RabbitMQ
 - **Exchange**: `transaction.notification.exchange` (topic).
