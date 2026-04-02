@@ -101,6 +101,24 @@ Variáveis úteis (ajuste no `application.properties`):
 4) No consumidor, falhas de notificação HTTP geram reentrega via retry queue; após 3 tentativas a mensagem vai para DLQ.
 
 ## Endpoints
+- `POST /users`
+  - Body:
+  ```json
+  {
+    "firstName": "Maria",
+    "lastName": "Silva",
+    "document": "12345678900",
+    "email": "maria@email.com",
+    "password": "123456",
+    "balance": 1000.00,
+    "userType": "COMUM"
+  }
+  ```
+  - Retorno: cria um usuário e responde com um objeto resumido contendo `id`, `firstName`, `balance` e `userType`.
+
+- `GET /users`
+  - Retorno: lista os usuários cadastrados no formato resumido com `id`, `firstName`, `lastName`, `document`, `balance` e `userType`.
+
 - `POST /transactions`
   - Body:
   ```json
@@ -110,6 +128,7 @@ Variáveis úteis (ajuste no `application.properties`):
     "receiverId": 2
   }
   ```
+  - Retorno: responde com `id`, `amount`, `sender`, `receiver` e `timestamp`, usando o DTO de resposta simplificado.
   - Efeitos: valida saldo, autoriza, persiste transação, grava evento no outbox (mensagem segue assíncrona pelo RabbitMQ).
 
 ## Boas práticas aplicadas
@@ -130,7 +149,7 @@ Variáveis úteis (ajuste no `application.properties`):
 ## Observabilidade
 - Logs já trazem eventos de consumo e reenvio. Sugestão: adicionar métricas (Micrometer) para contagem de mensagens `PENDING/SENT/FAILED`, tamanho da DLQ, e tempos de publicação.
 
-## Próximos passos sugeridos
+## Próximos passos para evolução do projeto
 1) Adicionar migrações Flyway/Liquibase para `outbox_messages` e demais tabelas.
 2) Expor health checks (liveness/readiness) e métricas do outbox/filas.
 3) Implementar backoff exponencial configurável para o outbox publisher e para a retry queue.
